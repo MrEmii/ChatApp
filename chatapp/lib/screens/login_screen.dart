@@ -1,5 +1,6 @@
 import 'package:chatapp/dialogs/alerts_dialogs.dart';
-import 'package:chatapp/services/services.dart';
+import 'package:chatapp/services/auth_service.dart';
+import 'package:chatapp/services/sockets_service.dart';
 import 'package:chatapp/widgets/button.dart';
 import 'package:chatapp/widgets/custom_input.dart';
 import 'package:chatapp/widgets/labels.dart';
@@ -56,7 +57,8 @@ class __FormState extends State<_Form> {
   @override
   Widget build(BuildContext context) {
 
-    final authService = Provider.of<AuthService>(context, listen: false);
+    final authService = Provider.of<AuthService>(context);
+    final socketService = Provider.of<SocketService>(context, listen: false);
 
     return Container(
       margin: EdgeInsets.only(top: 40),
@@ -88,25 +90,15 @@ class __FormState extends State<_Form> {
                   return;
                 }
 
-                showDialog(
-                  context: context,
-                  barrierDismissible: false,
-                  builder: (_) => Center(child: CircularProgressIndicator(),)
-                );
 
                 final isSignIn = await authService.login(email: emailController.text, password: passwordController.text);
-                Navigator.pop(context);
 
                 if(isSignIn) {
-
-                  print("HOLA");
+                  socketService.connect();
+                  Navigator.pushReplacementNamed(context, "usuarios");
                 }else{
                   showAlert(context, "No se pudo", "No iniciaste sesion flaco jaj");
-
                 }
-
-
-                Navigator.pop(context);
               }
             )
           ],

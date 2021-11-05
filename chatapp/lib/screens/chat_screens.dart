@@ -1,6 +1,10 @@
+import 'package:chatapp/services/auth_service.dart';
+import 'package:chatapp/services/chat_service.dart';
+import 'package:chatapp/services/sockets_service.dart';
 import 'package:chatapp/widgets/chat_bubble.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 
 class ChatScreen extends StatefulWidget {
@@ -17,8 +21,55 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin{
 
   List<ChatBubble> messages = [];
 
+  late ChatService chatService;
+  late SocketService socketService;
+  late AuthService authService;
+
+  @override
+  void initState() {
+    super.initState();
+    chatService = Provider.of<ChatService>(context, listen: false);
+    socketService = Provider.of<SocketService>(context, listen:  false);
+    authService = Provider.of<AuthService>(context, listen: false);
+
+    chatService.getMessages(chatService.user!.id).then((messages){
+      setState(() {
+        this.messages = messages.map((e) => ChatBubble(message: e.message, uid: e.from, animationController: AnimationController(
+              duration: Duration.zero,
+              vsync: this,
+            )..forward())).toList();
+      });
+    });
+
+    socketService.socket.on('user-message', (message) => onMessage(message));
+  }
+
+  void onMessage(message) {
+    setState(() {
+      this.messages.insert(
+        0,
+        ChatBubble(
+          message: message["message"],
+          uid: message["from"],
+          animationController: AnimationController(
+              duration: const Duration(milliseconds: 500),
+              vsync: this,
+            )..forward()
+          )
+        );
+    });
+  }
+
+  @override
+  void dispose() {
+    socketService.socket.off('user-message');
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
+    var user = chatService.user!;
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.white,
@@ -26,11 +77,11 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin{
           children: [
             CircleAvatar(
               maxRadius: 14,
-              child: Text("Ma", style: TextStyle(fontSize: 12),),
+              child: Text(user.nombre.substring(0, 2).toUpperCase(), style: TextStyle(fontSize: 12),),
               backgroundColor: Colors.blue[100],
             ),
             SizedBox(height: 3,),
-            Text("Maradona", style: TextStyle(color: Colors.black87, fontSize: 12),)
+            Text(user.nombre, style: TextStyle(color: Colors.black87, fontSize: 12),)
           ],
         ),
         centerTitle: true,
@@ -101,7 +152,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin{
   _handleSubmit(value){
     if(value == null || value.trim().isEmpty) return;
 
-    this.messages.insert(0, ChatBubble(message: value, uid: '0', animationController: AnimationController(
+    this.messages.insert(0, ChatBubble(message: value, uid: this.authService.user!.id, animationController: AnimationController(
                     duration: const Duration(milliseconds: 500),
                     vsync: this,
                   )..forward()));
@@ -110,6 +161,12 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin{
     _chatController.clear();
     setState(() {
       this.isTyping = false;
+    });
+
+    this.socketService.emit("message-user", {
+      "from": authService.user!.id,
+      "to": chatService.user!.id,
+      "message": value.trim()
     });
   }
 }

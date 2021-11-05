@@ -1,18 +1,25 @@
 const { io } = require('../index');
+const { isUserValid, connnectUser, disconnectUser, saveMessage } = require('../controllers/sockets');
+
+/**
+ * @description Socket connection
+ * @param {Object} socket
+ * @returns {void}
+ */
+io.on('connection', async function (client) {
+  const userId = isUserValid(client);
+  connnectUser(userId);
 
 
-// Mensajes de Sockets
-io.on('connection', client => {
-    console.log('Cliente conectado');
+  client.join(userId);
 
-       client.on('disconnect', () => {
-        console.log('Cliente desconectado');
-    });
+  client.on('message-user', async (payload) => {
+    await saveMessage(payload);
+    client.to(payload.to).emit('user-message', payload);
+  })
 
-    client.on('mensaje', ( payload ) => {
-        console.log('Mensaje', payload);
-        io.emit( 'mensaje', { admin: 'Nuevo mensaje' } );
-    });
-
+  client.on('disconnect', () => {
+    disconnectUser(userId);
+  })
 
 });

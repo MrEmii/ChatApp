@@ -1,9 +1,12 @@
+import 'package:chatapp/dialogs/alerts_dialogs.dart';
+import 'package:chatapp/services/auth_service.dart';
 import 'package:chatapp/widgets/button.dart';
 import 'package:chatapp/widgets/custom_input.dart';
 import 'package:chatapp/widgets/labels.dart';
 import 'package:chatapp/widgets/logo.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 
 class RegisterScreen extends StatelessWidget {
@@ -53,6 +56,9 @@ class __FormState extends State<_Form> {
 
   @override
   Widget build(BuildContext context) {
+    final authService = Provider.of<AuthService>(context);
+
+
     return Container(
       margin: EdgeInsets.only(top: 40),
       padding: EdgeInsets.symmetric(horizontal: 50),
@@ -79,8 +85,24 @@ class __FormState extends State<_Form> {
 
             Button(
               text: "Registrarse",
-              onTap: (){
-                print("PEPE");
+              onTap: () async {
+                FocusScope.of(context).unfocus();
+
+                if( emailController.text.trim().isEmpty || usernameController.text.trim().isEmpty || passwordController.text.trim().isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Faltan ingresar datos....")));
+                  return;
+                }
+
+
+                final register = await authService.register(email: emailController.text.trim(), password: passwordController.text.trim(), username: usernameController.text.trim());
+
+                if(register.trim().isNotEmpty) {
+                  Navigator.pushReplacementNamed(context, "usuarios");
+
+                }else{
+                  showAlert(context, "No se pudo", register);
+
+                }
               }
             )
           ],

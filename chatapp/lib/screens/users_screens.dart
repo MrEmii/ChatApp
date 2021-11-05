@@ -1,6 +1,11 @@
 import 'package:chatapp/models/user.dart';
+import 'package:chatapp/services/auth_service.dart';
+import 'package:chatapp/services/chat_service.dart';
+import 'package:chatapp/services/sockets_service.dart';
+import 'package:chatapp/services/users_service.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
 
 
@@ -14,26 +19,29 @@ class _UsersScreenState extends State<UsersScreen> {
 
   RefreshController _refreshController = RefreshController(initialRefresh: false);
 
-  final usuarios = [
-    User(online: false, email: "email", nombre: "Tylor", id: "1"),
-    User(online: true, email: "email", nombre: "Maradona", id: "2"),
-    User(online: true, email: "email", nombre: "Shakira", id: "3"),
-    User(online: false, email: "email", nombre: "Madona", id: "4")
-  ];
-
+  List<User> users = [];
 
   @override
   Widget build(BuildContext context) {
+
+    final authService = Provider.of<AuthService>(context);
+    final socketService = Provider.of<SocketService>(context);
     return Scaffold(
       appBar: AppBar(
-        title: Text("Emir UwU", style: TextStyle(color: Colors.black87),),
+        title: Text(authService.user!.nombre, style: TextStyle(color: Colors.black87),),
         elevation: 1,
+        centerTitle: true,
         backgroundColor: Colors.white,
-        leading: IconButton(onPressed: (){}, icon: Icon(CupertinoIcons.chevron_back, color: Colors.black87,)),
+        leading: IconButton(
+          onPressed: () async{
+            await AuthService.removeToken();
+            socketService.disconnect();
+            Navigator.pushReplacementNamed(context, "login");
+          }, icon: Icon(Icons.exit_to_app, color: Colors.black87,),),
         actions: [
           Container(
             margin: EdgeInsets.only(right: 10),
-            child: Icon(CupertinoIcons.check_mark_circled, color: Colors.blue[400],),
+            child: socketService.serverStatus == ServerStatus.Online ? Icon(CupertinoIcons.check_mark_circled, color: Colors.blue[400],) : Icon(CupertinoIcons.circle, color: Colors.red,),
           )
         ],
       ),
@@ -53,14 +61,19 @@ class _UsersScreenState extends State<UsersScreen> {
   ListView _contactList() {
     return ListView.separated(
       physics: BouncingScrollPhysics(),
-      itemBuilder: (_, i) => _userTile(this.usuarios[i]),
+      itemBuilder: (_, i) => _userTile(this.users[i]),
       separatorBuilder: (_, i) => Divider(),
-      itemCount: this.usuarios.length,
+      itemCount: this.users.length,
     );
   }
 
   ListTile _userTile(User user) {
     return ListTile(
+      onTap: () {
+        final chatService = Provider.of<ChatService>(context, listen: false);
+        chatService.user = user;
+        Navigator.pushNamed(context, "chat");
+      },
       title: Text(user.nombre),
       subtitle: Text(user.email),
       leading: CircleAvatar(
@@ -79,7 +92,13 @@ class _UsersScreenState extends State<UsersScreen> {
   }
 
   _loadUsers() async{
-    await Future.delayed(Duration(milliseconds: 1000));
+
+    final usersService = UsersService();
+
+    users = await usersService.getUsers();
+
+    setState(() {});
+
     _refreshController.refreshCompleted();
   }
 }

@@ -22,8 +22,10 @@ db().then(() => {
   app.use(express.static(publicPath));
 
   app.use("/auth", require("./routes/auth"));
+  app.use("/users", require("./routes/users"));
+  app.use("/messages", require("./routes/messages"));
 
-  server.listen(process.env.PORT, (err) => {
+  server.listen(3000, (err) => {
 
     if (err) throw new Error(err);
 

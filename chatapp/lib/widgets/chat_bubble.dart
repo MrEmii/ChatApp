@@ -1,7 +1,9 @@
+import 'package:chatapp/services/auth_service.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 
-class ChatBubble extends StatelessWidget {
+class ChatBubble extends StatefulWidget {
 
   final String message, uid;
   final AnimationController animationController;
@@ -9,23 +11,37 @@ class ChatBubble extends StatelessWidget {
   const ChatBubble({Key? key, required this.message, required this.uid, required this.animationController}) : super(key: key);
 
   @override
+  State<ChatBubble> createState() => _ChatBubbleState();
+}
+
+class _ChatBubbleState extends State<ChatBubble> {
+  @override
+  void dispose() {
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final authService = Provider.of<AuthService>(context, listen: false);
+
+    var isMine = widget.uid == authService.user!.id;
     return SlideTransition(
       position: Tween<Offset>(
-        begin: Offset((uid == '0' ? 1 : -1), 0.0),
+        begin: Offset((isMine ? 1 : -1), 0.0),
         end: Offset.zero,
       ).animate(CurvedAnimation(
-        parent: animationController,
+        parent: widget.animationController,
         curve: Curves.easeInOut
       )),
       child: FadeTransition(
-        opacity: animationController,
+        opacity: widget.animationController,
         child: Container(
-          child: uid == '0' ? _mineBubble() : _anotherBubble(),
+          child: isMine ? _mineBubble() : _anotherBubble(),
         ),
       ),
     );
   }
+
   _mineBubble() {
     return Align(
       alignment: Alignment.centerRight,
@@ -41,7 +57,7 @@ class ChatBubble extends StatelessWidget {
           ),
           borderRadius: BorderRadius.circular(20)
         ),
-        child: Text(this.message, style: TextStyle(color: Colors.white),),
+        child: Text(this.widget.message, style: TextStyle(color: Colors.white),),
       ),
     );
   }
@@ -61,7 +77,7 @@ class ChatBubble extends StatelessWidget {
           ),
           borderRadius: BorderRadius.circular(20)
         ),
-        child: Text(this.message, style: TextStyle(color: Colors.black54),),
+        child: Text(this.widget.message, style: TextStyle(color: Colors.black54),),
       ),
     );
   }

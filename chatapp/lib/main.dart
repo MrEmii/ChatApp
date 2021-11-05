@@ -1,5 +1,7 @@
 import 'package:chatapp/routes/routes.dart';
-import 'package:chatapp/services/services.dart';
+import 'package:chatapp/services/auth_service.dart';
+import 'package:chatapp/services/chat_service.dart';
+import 'package:chatapp/services/sockets_service.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -10,12 +12,14 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider<AuthService>(create: (_) => AuthService())
+        ChangeNotifierProvider<AuthService>(create: (_) => AuthService()),
+        ChangeNotifierProvider<SocketService>(create: (_) => SocketService()),
+        ChangeNotifierProvider<ChatService>(create: (_) => ChatService())
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
         title: 'DotMsn',
-        initialRoute: 'login',
+        initialRoute: 'splash',
         routes: appRoutes,
       ),
     );

@@ -8,7 +8,7 @@ const generateJWT = (id) => {
       expiresIn: '48h'
     }, (err, token) => {
       if (err) {
-        return reject({ok: false, msg: "Salió mal el token papuchoo"})
+        return reject({ ok: false, msg: "Salió mal el token papuchoo" })
       }
       resolve(token)
 
@@ -16,6 +16,17 @@ const generateJWT = (id) => {
   })
 }
 
+const verifyJWT = (token) => {
+  try {
+    const {id} = jwt.verify(token, "pepeargentino")
+    return [true, id];
+  } catch (err) {
+    return [false, null];
+  }
+}
+
+
 module.exports = {
-  generateJWT
+  generateJWT,
+  verifyJWT
 }
